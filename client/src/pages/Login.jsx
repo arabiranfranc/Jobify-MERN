@@ -1,20 +1,54 @@
-import { Logo, FormRow } from "../components";
+import { Link, Form, redirect, useActionData } from "react-router-dom";
 import Wrapper from "../assets/wrappers/RegisterAndLoginPage";
+import { FormRow, Logo, SubmitBtn } from "../components";
+import customFetch from "../utils/customFetch";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
-import { Link } from "react-router-dom";
-
+export const action = async ({ request }) => {
+  const formData = await request.formData();
+  const data = Object.fromEntries(formData);
+  const errors = { msg: "" };
+  if (data.password.length < 3) {
+    errors.msg = "password too short";
+    return errors;
+  }
+  try {
+    await customFetch.post("/auth/login", data);
+    toast.success("Login successful");
+    return redirect("/dashboard");
+  } catch (error) {
+    // toast.error(error?.response?.data?.msg);
+    errors.msg = error.response.data.msg;
+    return error;
+  }
+};
 const Login = () => {
+  const errors = useActionData();
+  const navigate = useNavigate();
+  const loginDemoUser = async () => {
+    const data = {
+      email: "test@test.com",
+      password: "secret123",
+    };
+    try {
+      await customFetch.post("/auth/login", data);
+      toast.success("take a test drive");
+      navigate("/dashboard");
+    } catch (error) {
+      toast.error(error?.response?.data?.msg);
+    }
+  };
   return (
     <Wrapper>
-      <form className="form">
+      <Form method="post" className="form">
         <Logo />
-        <h4>Login</h4>
+        <h4>login</h4>
+        {errors && <p style={{ color: "red" }}>{errors.msg}</p>}
         <FormRow type="email" name="email" defaultValue="john@gmail.com" />
         <FormRow type="password" name="password" defaultValue="secret123" />
-        <button type="submit" className="btn btn-block">
-          submit
-        </button>
-        <button type="button" className="btn btn-block">
+        <SubmitBtn />
+        <button type="button" className="btn btn-block" onClick={loginDemoUser}>
           explore the app
         </button>
         <p>
@@ -23,7 +57,7 @@ const Login = () => {
             Register
           </Link>
         </p>
-      </form>
+      </Form>
     </Wrapper>
   );
 };
